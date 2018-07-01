@@ -15,3 +15,28 @@
       pip:
         name: virtualenv
       become: yes
+    - name: create app dir
+      file:
+        path: /var/app
+        state: directory
+        owner: vagrant
+        group: vagrant
+      become: yes
+    - name: install virtualenv requirements
+      template:
+        src: requirements.txt
+        dest: /var/app/requirements.txt
+    - name: install virtualenv packages
+      pip:
+        requirements: /var/app/requirements.txt
+        virtualenv: /var/app/venv
+    - name: link myproj.py
+      file:
+        src: /vagrant/myproj.py
+        dest: /var/app/myproj.py
+        state: link
+    - name: link wsgi.py
+      file:
+        src: /vagrant/wsgi.py
+        dest: /var/app/wsgi.py
+        state: link
