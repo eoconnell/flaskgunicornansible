@@ -1,0 +1,17 @@
+---
+- hosts: all
+  tasks:
+    - name: installing packages
+      package:
+        name: "{{ item }}"
+        state: present
+      become: yes
+      with_items:
+        - epel-release
+        - python-pip
+        - python-devel
+        - nginx
+    - name: installing virtualenv
+      pip:
+        name: virtualenv
+      become: yes
