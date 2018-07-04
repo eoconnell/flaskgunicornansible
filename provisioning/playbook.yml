@@ -1,31 +1,41 @@
 ---
 - hosts: all
+  become: yes
   tasks:
     - name: installing packages
       package:
         name: "{{ item }}"
         state: present
-      become: yes
       with_items:
         - epel-release
         - python-pip
         - python-devel
         - nginx
+    - include_tasks: tasks/selinux.yml
     - name: installing virtualenv
       pip:
         name: virtualenv
-      become: yes
     - name: create app dir
       file:
         path: /var/app
+        mode: 0770
+        owner: myproj
+        group: nginx
         state: directory
-        owner: vagrant
-        group: vagrant
-      become: yes
+    - name: create myproj user
+      user:
+        comment: myproj application
+        name: myproj
+        group: nginx
+        home: /var/app
+        shell: /sbin/nologin
+        state: present
     - name: install virtualenv requirements
       template:
         src: requirements.txt
         dest: /var/app/requirements.txt
+        owner: myproj
+        group: nginx
     - name: install virtualenv packages
       pip:
         requirements: /var/app/requirements.txt
@@ -34,9 +44,31 @@
       file:
         src: /vagrant/myproj.py
         dest: /var/app/myproj.py
+        owner: myproj
+        group: nginx
         state: link
     - name: link wsgi.py
       file:
         src: /vagrant/wsgi.py
         dest: /var/app/wsgi.py
+        owner: myproj
+        group: nginx
         state: link
+    - name: install myproj service
+      template:
+        src: myproj.service.j2
+        dest: /etc/systemd/system/myproj.service
+    - name: start myproj
+      service:
+        name: myproj
+        state: started
+    - name: install nginx conf
+      template:
+        src: nginx.conf
+        dest: /etc/nginx/nginx.conf
+        owner: nginx
+        group: nginx
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted
